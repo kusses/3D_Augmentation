@@ -311,4 +311,4 @@ A. Begin with `--mode coords` for minority classes, validate geometry, then opti
 ---
 
 ## License
-Specify your license here (e.g., MIT, Apache-2.0). If this is internal, add an INTERNAL USE ONLY notice.
+MIT License
