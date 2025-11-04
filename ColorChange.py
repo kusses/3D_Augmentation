@@ -18,20 +18,20 @@ class ColorChange:
         self.segment = np.load(os.path.join(self.in_data_folder, 'segment.npy'))
 
     def change_color(self, color):
-        direction = random.choice(['RG', 'GB', 'BR'])  # 세 가지 방향 중 하나 선택
+        direction = random.choice(['RG', 'GB', 'BR'])  # random direction
         opp_color = color.copy()
 
         if direction == 'RG':
-            opp_color[0] = 255 - color[1]  # R 채널을 G의 반대색으로 설정
-            opp_color[1] = 255 - color[0]  # G 채널을 R의 반대색으로 설정
+            opp_color[0] = 255 - color[1]  # R channel to G
+            opp_color[1] = 255 - color[0]  # G channel to R
         elif direction == 'GB':
-            opp_color[1] = 255 - color[2]  # G 채널을 B의 반대색으로 설정
-            opp_color[2] = 255 - color[1]  # B 채널을 G의 반대색으로 설정
+            opp_color[1] = 255 - color[2]  # G channel to B
+            opp_color[2] = 255 - color[1]  # B channel to G
         elif direction == 'BR':
-            opp_color[2] = 255 - color[0]  # B 채널을 R의 반대색으로 설정
-            opp_color[0] = 255 - color[2]  # R 채널을 B의 반대색으로 설정
+            opp_color[2] = 255 - color[0]  # B channel to R
+            opp_color[0] = 255 - color[2]  # R channel to B
 
-        # 각 방향으로 변형한 색상에 무작위 변형을 추가
+        # add random change
         new_color = np.clip(opp_color + np.random.randint(-70, 70, opp_color.shape), 0, 255)
         return new_color
 
@@ -62,11 +62,10 @@ class ColorChange:
                 original_color = minority_data[i, 3:6]
 
                 if color_delta is None:
-                    # 첫 번째 점에서 색상 변환 수행
+                    # chage the first point
                     new_color = self.change_color(original_color)
-                    color_delta = new_color - original_color  # 변화량 저장
-                else:
-                    # 나머지 점들은 동일한 변화량 적용
+                    color_delta = new_color - original_color  
+                else:                    
                     new_color = np.clip(original_color + color_delta, 0, 255)
 
                 new_point = np.concatenate((minority_data[i, :3], new_color, [minority_class]))
@@ -77,7 +76,7 @@ class ColorChange:
             augmented_colors.append(new_points_array[:, 3:6])
             augmented_segments.append(new_points_array[:, 6])
 
-        # 변경되지 않은 데이터 (exclude_class) 병합
+        # exclude_class append
         if self.exclude_class is not None:
             unmodified_data = np.hstack((self.coord, self.color, self.segment.reshape(-1, 1)))
             unmodified_data = unmodified_data[unmodified_data[:, -1] == self.exclude_class]
@@ -86,7 +85,7 @@ class ColorChange:
             augmented_colors.append(unmodified_data[:, 3:6])
             augmented_segments.append(unmodified_data[:, 6])
 
-        # 병합한 데이터 저장
+        # save data
         self.coord = np.vstack(augmented_coords)
         self.color = np.vstack(augmented_colors)
         self.segment = np.hstack(augmented_segments)
