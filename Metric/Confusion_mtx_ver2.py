@@ -56,8 +56,8 @@ def calculate_metrics_from_confusion_matrix(cm):
     for i in range(n_classes):
         # True Positive, False Positive, False Negative, True Negative
         tp = cm[i, i]
-        fp = cm[:, i].sum() - tp  # 다른 클래스를 i로 예측
-        fn = cm[i, :].sum() - tp  # i를 다른 클래스로 예측
+        fp = cm[:, i].sum() - tp  # other class to i pred
+        fn = cm[i, :].sum() - tp  # i to other class pred
         tn = cm.sum() - tp - fp - fn
 
         # Precision, Recall, F1-score
@@ -125,8 +125,7 @@ def calculate_overall_metrics(cm, metrics_dict):
     }
 
 
-# [기존 코드 유지: GT와 PRED 폴더 수집 및 처리 부분]
-# GT와 PRED 폴더 목록 수집
+# GT and PRED folders
 gt_scene_dirs = sorted(glob.glob(os.path.join(GT_DATA_ROOT, "*.ply")))
 pred_scene_dirs = sorted(glob.glob(os.path.join(PRED_DATA_ROOT, "*.ply")))
 
@@ -138,7 +137,7 @@ if not pred_scene_dirs:
     print(f"[ERR] No PRED scene folders found in: {PRED_DATA_ROOT}", file=sys.stderr)
     sys.exit(1)
 
-# Scene ID 매핑 생성
+# Scene ID mapping
 gt_scene_map = {}
 for gt_dir in gt_scene_dirs:
     if os.path.isdir(gt_dir):
@@ -178,12 +177,10 @@ processed = []
 for scene_id in sorted(common_scenes):
     gt_dir = gt_scene_map[scene_id]
     pred_dir = pred_scene_map[scene_id]
-
-    # GT와 PRED 파일 경로
+    
     gt_path = os.path.join(gt_dir, "segment.npy")
     pred_path = os.path.join(pred_dir, "pred.npy")
 
-    # 파일 존재 확인
     if not os.path.exists(gt_path):
         missing_files.append(f"GT:{scene_id}/segment.npy")
         print(f"[WARN] Missing GT file: {gt_path}")
@@ -194,7 +191,6 @@ for scene_id in sorted(common_scenes):
         print(f"[WARN] Missing PRED file: {pred_path}")
         continue
 
-    # 라벨 로드
     gt = load_labels(gt_path)
     pr = load_labels(pred_path)
 
@@ -202,13 +198,11 @@ for scene_id in sorted(common_scenes):
         print(f"[WARN] Failed to load files for scene: {scene_id}")
         continue
 
-    # 길이 체크
     if gt.shape != pr.shape:
         n = min(gt.size, pr.size)
         print(f"[WARN] Length mismatch: {scene_id}  gt={gt.size}, pred={pr.size} -> truncate to {n}")
         gt, pr = gt[:n], pr[:n]
 
-    # Ignore index 처리
     if IGNORE_INDEX is not None:
         m = (gt != IGNORE_INDEX)
         gt, pr = gt[m], pr[m]
@@ -217,7 +211,6 @@ for scene_id in sorted(common_scenes):
     y_pred_all.append(pr)
     processed.append(scene_id)
 
-# 처리 결과 출력
 print(f"\n[INFO] Processing Summary:")
 print(f"  - Successfully processed: {len(processed)}/{len(common_scenes)} scenes")
 if missing_files:
@@ -231,21 +224,20 @@ if not y_true_all:
     print("[ERR] No valid scene pairs found", file=sys.stderr)
     sys.exit(1)
 
-# 모든 데이터 연결
 y_true = np.concatenate(y_true_all, axis=0)
 y_pred = np.concatenate(y_pred_all, axis=0)
 
 print(f"\n[INFO] Total points for evaluation: {len(y_true):,}")
 
-# ========= Confusion Matrix 계산 =========
+# ========= Confusion Matrix =========
 labels = list(range(NUM_CLASSES))
 cm = confusion_matrix(y_true, y_pred, labels=labels).astype(np.float64)
 
-# ========= 메트릭 계산 =========
+# ========= Matric =========
 class_metrics = calculate_metrics_from_confusion_matrix(cm)
 overall_metrics = calculate_overall_metrics(cm, class_metrics)
 
-# ========= 결과 출력 =========
+# ========= print result =========
 print("\n" + "=" * 80)
 print("EVALUATION METRICS")
 print("=" * 80)
@@ -273,7 +265,7 @@ for i in range(len(class_metrics['class_name'])):
           f"{class_metrics['f1_score'][i]:>8.4f} "
           f"{class_metrics['support'][i]:>8}")
 
-# ========= CSV 저장 =========
+# ========= save CSV  =========
 # Per-class metrics DataFrame
 df_class = pd.DataFrame(class_metrics)
 df_class = df_class.round(4)
@@ -282,7 +274,6 @@ df_class = df_class.round(4)
 df_overall = pd.DataFrame([overall_metrics])
 df_overall = df_overall.round(4)
 
-# CSV 저장
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 csv_filename = f"metrics_{timestamp}.csv"
 
@@ -299,14 +290,14 @@ with open(csv_filename, 'w') as f:
 
 print(f"\n[OK] Metrics saved to: {csv_filename}")
 
-# Excel 파일로도 저장 (옵션)
+# Excel save(optional)
 excel_filename = f"metrics_{timestamp}.xlsx"
 with pd.ExcelWriter(excel_filename) as writer:
     df_overall.to_excel(writer, sheet_name='Overall', index=False)
     df_class.to_excel(writer, sheet_name='Per-Class', index=False)
 print(f"[OK] Metrics saved to: {excel_filename}")
 
-# ========= Confusion Matrix Visualization (기존 코드) =========
+# ========= Confusion Matrix Visualization =========
 row_sum = cm.sum(axis=1, keepdims=True)
 row_sum[row_sum == 0] = 1.0
 cm_norm = cm / row_sum
@@ -326,7 +317,6 @@ ax.set_title(f"Confusion Matrix (row-normalized)\n"
              f"mF1: {overall_metrics['mean_f1_score']:.3f}",
              fontsize=12)
 
-# 셀에 값 표시
 th = cm_norm.max() * 0.5
 for i in range(NUM_CLASSES):
     for j in range(NUM_CLASSES):
