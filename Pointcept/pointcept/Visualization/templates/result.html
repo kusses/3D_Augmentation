@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>PLY Visualization Results</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Ground Truth Visualization</h1>
+    <div id="gt-visualization">
+        {{ plot_html_gt|safe }}
+    </div>
+
+    <h1>Prediction Visualization</h1>
+    <div id="pred-visualization">
+        {{ plot_html_pred|safe }}
+    </div>
+</body>
+</html>

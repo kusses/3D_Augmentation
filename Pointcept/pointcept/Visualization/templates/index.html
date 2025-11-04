@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>PLY File Upload</title>
+</head>
+<body>
+    <h1>Upload PLY File and Prediction File</h1>
+    <form method="post" action="/upload" enctype="multipart/form-data">
+        <div>
+            <label for="file">PLY File:</label>
+            <input type="file" id="file" name="file">
+        </div>
+        <div>
+            <label for="pred_file">Prediction File:</label>
+            <input type="file" id="pred_file" name="pred_file">
+        </div>
+        <div>
+            <button type="submit">Upload and Visualize</button>
+        </div>
+    </form>
+</body>
+</html>
